@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { Task } from './task/task.interface';
 
 import { CdkDragDrop, transferArrayItem } from '@angular/cdk/drag-drop';
+import { MatDialog } from '@angular/material/dialog';
+import { TaskDialogComponent, TaskDialogResult } from 'src/app/task-dialog/task-dialog.component'
 
 @Component({
   selector: 'app-root',
@@ -9,7 +11,25 @@ import { CdkDragDrop, transferArrayItem } from '@angular/cdk/drag-drop';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'tasks-angular-firebase';
+  constructor(private dialog: MatDialog) { }
+
+  newTask(): void {
+    const dialogRef = this.dialog.open(TaskDialogComponent, {
+      width: '370px',
+      data: {
+        task: {},
+      },
+    });
+    dialogRef
+      .afterClosed()
+      .subscribe((result: TaskDialogResult | undefined) => {
+        if (!result) {
+          return;
+        }
+        this.todo.push(result.task);
+      });
+  }
+
   todo: Task[] = [
     {
       title: 'Buy milk',
