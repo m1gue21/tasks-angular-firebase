@@ -5,30 +5,19 @@ import { CdkDragDrop, transferArrayItem } from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { TaskDialogComponent, TaskDialogResult } from 'src/app/task-dialog/task-dialog.component'
 
+import { Firestore, collectionChanges } from '@angular/fire/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { Observable } from 'rxjs';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  constructor(private dialog: MatDialog) { }
+  constructor(private dialog: MatDialog, private firestore: Firestore) { }
 
-  newTask(): void {
-    const dialogRef = this.dialog.open(TaskDialogComponent, {
-      width: '370px',
-      data: {
-        task: {},
-      },
-    });
-    dialogRef
-      .afterClosed()
-      .subscribe((result: TaskDialogResult | undefined) => {
-        if (!result) {
-          return;
-        }
-        this.todo.push(result.task);
-      });
-  }
+  todoRef = collection(this.firestore, 'todo')
 
   todo: Task[] = [
     {
@@ -43,7 +32,46 @@ export class AppComponent {
   inProgress: Task[] = [];
   done: Task[] = [];
 
-  editTask(list: string, task: Task): void { }
+
+  newTask(): void {
+    const dialogRef = this.dialog.open(TaskDialogComponent, {
+      width: '270px',
+      data: {
+        task: {},
+      },
+    });
+    dialogRef
+      .afterClosed()
+      .subscribe((result: TaskDialogResult | undefined) => {
+        if (!result) {
+          return;
+        }
+        this.todo.push(result.task);
+      });
+  }
+
+  editTask(list: 'done' | 'todo' | 'inProgress', task: Task): void {
+    const dialogRef = this.dialog.open(TaskDialogComponent, {
+      width: '270px',
+      data: {
+        task,
+        enableDelete: true,
+      },
+    });
+    dialogRef.afterClosed().subscribe((result: TaskDialogResult | undefined) => {
+      if (!result) {
+        return;
+      }
+      const dataList = this[list];
+      const taskIndex = dataList.indexOf(task);
+      if (result.delete) {
+        dataList.splice(taskIndex, 1);
+      } else {
+        dataList[taskIndex] = task;
+      }
+    });
+  }
+
 
   drop(event: CdkDragDrop<Task[]>): void {
     if (event.previousContainer === event.container) {
